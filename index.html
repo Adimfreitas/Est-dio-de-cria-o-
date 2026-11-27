@@ -50,6 +50,27 @@ dialog textarea,dialog input,dialog select{width:100%}
 dialog p.r{text-align:right;margin:14px 0 0}
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
+.ico{width:22px;height:22px;display:block;margin:0 auto 2px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button{font-size:.75rem}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.stat{display:flex;flex-direction:column;align-items:center;padding:8px 2px;border-radius:10px;border:1px solid var(--ln);background:var(--pn);font-size:.72rem;color:var(--mut)}
+.stat b{font-size:1.3rem;color:var(--ink)}
+.quick{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.quick button{white-space:nowrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{border-radius:99px;padding:4px 10px;font-size:.8rem}
+.chip.on{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.seg{display:flex}.seg button{border-radius:0;padding:6px 12px}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}.seg .on{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.board{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.col{min-width:230px;flex:1;background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:8px;scroll-snap-align:start}
+.col h4{margin:2px 4px 8px;font-size:.85rem;display:flex;justify-content:space-between}
+.kc{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px;margin-bottom:6px}
+.kc b{display:block;font-size:.9rem;margin-bottom:6px;overflow-wrap:anywhere}
+.kc div{display:flex;gap:6px}.kc button{padding:3px 10px;flex:1}
+#fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;font-size:1.8rem;line-height:1;padding:0;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:4}
+#fm{position:fixed;right:16px;bottom:calc(140px + env(safe-area-inset-bottom,0px));display:none;flex-direction:column;gap:8px;z-index:4}
+#fm.on{display:flex}
+#fm button{box-shadow:0 2px 8px rgba(0,0,0,.25)}
 @media(max-width:480px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -57,12 +78,14 @@ dialog p.r{text-align:right;margin:14px 0 0}
 <header><strong>Estúdio</strong><span>para videomakers</span><button id="cfg" type="button">Ajustes de IA</button></header>
 <main id="v"></main>
 <nav>
-  <button data-t="clientes">Clientes</button>
-  <button data-t="gerador">Roteiros</button>
-  <button data-t="lib">Biblioteca</button>
-  <button data-t="agenda">Agenda</button>
+  <button data-t="clientes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Clientes</button>
+  <button data-t="gerador"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Roteiros</button>
+  <button data-t="lib"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Biblioteca</button>
+  <button data-t="agenda"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Agenda</button>
 </nav>
 <dialog id="dlg"></dialog>
+<div id="fm"><button data-a="newc">Novo cliente</button><button data-a="qr">Novo roteiro</button><button data-a="newe">Novo agendamento</button></div>
+<button id="fab" class="p" data-a="fab" type="button" aria-label="Criar novo">+</button>
 <div id="toast" role="status"></div>
 
 <script>
@@ -107,13 +130,14 @@ const CF=[{k:"name",l:"Nome do cliente"},{k:"brief",l:"Briefing (objetivo, públ
 const IF=[{k:"title",l:"Título"},{k:"tipo",l:"Tipo",t:"select",o:L(["Ideia","Roteiro","Tarefa"])},{k:"status",l:"Status",t:"select",o:L(ST)},{k:"body",l:"Conteúdo ou roteiro",t:"textarea"}];
 const EF=()=>[{k:"title",l:"Título"},{k:"tipo",l:"Tipo",t:"select",o:L(["Gravação","Edição","Entrega","Reunião"])},{k:"cid",l:"Cliente",t:"select",o:S.clients.map(c=>[c.id,c.name])},{k:"date",l:"Data",t:"date"},{k:"time",l:"Hora",t:"time"}];
 
-function itemCard(i){return '<details class="card"><summary><b>'+esc(i.title)+'</b><span class="tag s'+ST.indexOf(i.status)+'">'+esc(i.status)+'</span></summary><div class="page">'+(esc(i.body)||"(vazio)")+'</div><p class="acts"><button data-a="edi" data-id="'+i.id+'">Editar</button><button data-a="cpi" data-id="'+i.id+'">Copiar</button><button data-a="deli" data-id="'+i.id+'">Excluir</button></p></details>'}
+function itemCard(i){return '<details class="card"><summary><b>'+esc(i.title)+'</b><span class="tag s'+ST.indexOf(i.status)+'">'+esc(i.status)+'</span></summary><div class="page">'+(esc(i.body)||"(vazio)")+'</div><div class="chips">'+ST.map(s=>'<button class="chip'+(i.status===s?" on":"")+'" data-a="st" data-id="'+i.id+'" data-v="'+s+'">'+s+'</button>').join("")+'</div><p class="acts"><button data-a="edi" data-id="'+i.id+'">Editar</button><button data-a="cpi" data-id="'+i.id+'">Copiar</button><button data-a="deli" data-id="'+i.id+'">Excluir</button></p></details>'}
 function evRow(e,withC){return '<div class="ev'+(e.done?" done":"")+'"><input type="checkbox" data-a="tg" data-id="'+e.id+'"'+(e.done?" checked":"")+' aria-label="Concluído"><div><b>'+esc(e.title)+'</b><span>'+esc(e.tipo)+', '+fd(e.date)+(e.time?' às '+e.time:"")+(withC?', '+esc(cn(e.cid)):"")+'</span></div><button data-a="ede" data-id="'+e.id+'">Editar</button></div>'}
 
 function vClientes(){
  if(V.cid)return vCliente();
- return '<div class="bar"><h2>Clientes</h2><button class="p" data-a="newc">Novo cliente</button></div>'+
- (S.clients.length?S.clients.map(c=>{const n=S.items.filter(i=>i.cid===c.id).length,e=S.events.filter(x=>x.cid===c.id&&!x.done&&x.date>=today()).length;
+ const q=(V.q||"").toLowerCase();
+ return dash()+'<div class="bar"><h2>Clientes</h2><button class="p" data-a="newc">Novo cliente</button></div>'+(S.clients.length>3?'<input id="q" type="search" placeholder="Buscar cliente" value="'+esc(V.q||"")+'" style="width:100%;margin-bottom:8px">':"")+
+ (S.clients.length?S.clients.filter(c=>c.name.toLowerCase().includes(q)).map(c=>{const n=S.items.filter(i=>i.cid===c.id).length,e=S.events.filter(x=>x.cid===c.id&&!x.done&&x.date>=today()).length;
   return '<button class="card" data-a="openc" data-id="'+c.id+'"><b>'+esc(c.name)+'</b><span>'+n+' conteúdos, '+e+' agendamentos próximos</span></button>'}).join(""):
   '<p class="empty">Crie seu primeiro cliente para guardar briefing, roteiros e datas no mesmo lugar.</p>')+
  '<p class="foot">Seus dados ficam só neste navegador. Faça backup de vez em quando.</p><div class="acts"><button data-a="bk">Exportar backup</button><label class="btn">Importar backup<input type="file" id="imp" accept=".json" hidden></label></div>';
@@ -123,7 +147,7 @@ function vCliente(){
  const its=S.items.filter(i=>i.cid===c.id),evs=S.events.filter(e=>e.cid===c.id).sort(byDate);
  return '<div class="bar"><button data-a="back">Voltar</button><h2>'+esc(c.name)+'</h2><button data-a="editc" data-id="'+c.id+'">Editar</button></div>'+
  '<div class="note">'+(esc(c.brief)||"Sem briefing ainda. Toque em Editar para registrar objetivo, público e tom de voz.")+'</div>'+
- '<div class="bar"><h3>Conteúdos</h3><button class="p" data-a="newi" data-id="'+c.id+'">Novo conteúdo</button></div>'+(its.map(itemCard).join("")||'<p class="empty">Nenhum conteúdo ainda. Gere um roteiro na aba Roteiros e salve aqui.</p>')+
+ '<div class="bar"><h3>Conteúdos</h3><div class="seg"><button data-a="vw" data-v="lista" class="'+(V.vw==="quadro"?"":"on")+'">Lista</button><button data-a="vw" data-v="quadro" class="'+(V.vw==="quadro"?"on":"")+'">Quadro</button></div><button class="p" data-a="newi" data-id="'+c.id+'">Novo conteúdo</button></div>'+(V.vw==="quadro"&&its.length?board(its):its.map(itemCard).join("")||'<p class="empty">Nenhum conteúdo ainda. Gere um roteiro na aba Roteiros e salve aqui.</p>')+
  '<div class="bar"><h3>Agenda</h3><button class="p" data-a="newe" data-id="'+c.id+'">Novo agendamento</button></div>'+(evs.map(e=>evRow(e,false)).join("")||'<p class="empty">Nenhum agendamento.</p>')+
  '<div class="acts"><button data-a="delc" data-id="'+c.id+'">Excluir cliente</button></div>';
 }
@@ -167,9 +191,24 @@ function ics(){
  S.events.forEach(e=>L2.push("BEGIN:VEVENT","UID:"+e.id+"@estudio","DTSTAMP:"+st,"DTSTART:"+e.date.replace(/-/g,"")+"T"+(e.time||"09:00").replace(":","")+"00","DURATION:PT2H","SUMMARY:"+e.tipo+": "+e.title+" ("+cn(e.cid)+")","END:VEVENT"));
  L2.push("END:VCALENDAR");dl("agenda.ics",L2.join("\r\n"),"text/calendar");
 }
+function dash(){
+ const t=today(),up=S.events.filter(e=>e.date>=t&&!e.done).sort(byDate).slice(0,3);
+ return '<div class="stats">'+ST.map(s=>'<div class="stat"><b>'+S.items.filter(x=>x.status===s).length+'</b>'+s+'</div>').join("")+'</div>'+
+ '<div class="quick"><button class="p" data-a="qr">Novo roteiro</button><button data-a="newe">Agendar</button><button data-a="newc">Novo cliente</button></div>'+
+ (up.length?'<div class="bar"><h3>Próximos compromissos</h3></div>'+up.map(e=>evRow(e,true)).join(""):"");
+}
+function board(its){
+ return '<div class="board">'+ST.map((s,k)=>{const l=its.filter(i=>i.status===s);
+  return '<div class="col"><h4>'+s+'<span>'+l.length+'</span></h4>'+l.map(i=>'<div class="kc"><b>'+esc(i.title)+'</b><div>'+(k>0?'<button data-a="mv" data-id="'+i.id+'" data-v="'+(k-1)+'" aria-label="Etapa anterior">‹</button>':"")+'<button data-a="edi" data-id="'+i.id+'">Abrir</button>'+(k<4?'<button class="p" data-a="mv" data-id="'+i.id+'" data-v="'+(k+1)+'" aria-label="Próxima etapa">›</button>':"")+'</div></div>').join("")+'</div>'}).join("")+'</div>';
+}
 const find=(k,id)=>S[k].find(x=>x.id===id);
 const A={
  back(){V.cid=null;render()},
+ fab(){$("#fm").classList.toggle("on")},
+ qr(){V.tab="gerador";V.cid=null;render();scrollTo(0,0)},
+ vw(_,b){V.vw=b.dataset.v;render()},
+ mv(id,b){find("items",id).status=ST[+b.dataset.v];save();render()},
+ st(id,b){const i=find("items",id);i.status=b.dataset.v;save();const d=b.closest("details");d.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));const t=d.querySelector(".tag");t.textContent=i.status;t.className="tag s"+ST.indexOf(i.status)},
  openc(id){V.cid=id;render()},
  newc(){form("Novo cliente",CF,{},o=>{if(!o.name.trim())return toast("Informe o nome");const c={id:uid(),name:o.name.trim(),brief:o.brief};S.clients.push(c);V.cid=c.id;save();render()})},
  editc(id){const c=find("clients",id);form("Editar cliente",CF,c,o=>{if(o.name.trim())Object.assign(c,{name:o.name.trim(),brief:o.brief});save();render()})},
@@ -194,7 +233,7 @@ const A={
  bk(){dl("backup-estudio.json",JSON.stringify({...S,cfg:{...S.cfg,key:""}}),"application/json")}
 };
 document.addEventListener("click",e=>{
- const b=e.target.closest("[data-a],[data-t]");if(!b)return;
+ if(!e.target.closest("#fab"))$("#fm").classList.remove("on");const b=e.target.closest("[data-a],[data-t]");if(!b)return;
  if(b.dataset.t){readG();V.tab=b.dataset.t;V.cid=null;render();scrollTo(0,0);return}
  A[b.dataset.a](b.dataset.id,b);
 });
@@ -204,6 +243,7 @@ document.addEventListener("change",async e=>{
   S.clients=d.clients||[];S.items=d.items||[];S.events=d.events||[];save();render();toast("Backup importado")}
  catch{toast("Arquivo de backup inválido")}
 });
+document.addEventListener("input",e=>{if(e.target.id!=="q")return;V.q=e.target.value;render();const q=$("#q");q.focus();q.setSelectionRange(q.value.length,q.value.length)});
 $("#cfg").onclick=()=>form("Ajustes de IA",[{k:"prov",l:"Serviço",t:"select",o:[["groq","Groq"],["gemini","Google Gemini"],["openrouter","OpenRouter"]]},{k:"key",l:"Chave de API",t:"password"},{k:"mod",l:"Modelo (opcional)"}],S.cfg,o=>{Object.assign(S.cfg,{prov:o.prov,key:o.key.trim(),mod:o.mod.trim()});save();toast("Ajustes salvos")},"A chave fica só neste navegador. O gerador offline funciona sem chave.");
 render();
 </script>
