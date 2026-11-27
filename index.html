@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estúdio – organização e roteiros para videomakers</title>
+<style>
+:root{--bg:#e8ebee;--pn:#fff;--ink:#13171c;--mut:#667080;--ac:#1f4fd8;--acf:#fff;--ln:#d3d9e0;--pg:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1318;--pn:#171d25;--ink:#e7ecf2;--mut:#8f9bac;--ac:#7ea0ff;--acf:#0a1330;--ln:#27313d;--pg:#1b222b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select,input,textarea{font:inherit;color:inherit}
+button,select,input,textarea{border:1px solid var(--ln);background:var(--pn);border-radius:8px;padding:8px 12px;max-width:100%}
+button{cursor:pointer}
+button.p{background:var(--ac);color:var(--acf);border-color:var(--ac);font-weight:600}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+header{display:flex;align-items:baseline;gap:10px;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--pn);border-bottom:1px solid var(--ln);position:sticky;top:0;z-index:3}
+header strong{font-size:1.2rem;letter-spacing:.02em}
+header span{flex:1;color:var(--mut);font-size:.85rem}
+main{max-width:760px;margin:0 auto;padding:14px 14px 100px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--pn);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px);z-index:3}
+nav button{flex:1;border:0;border-radius:0;background:none;padding:14px 4px;color:var(--mut)}
+nav button.on{color:var(--ac);font-weight:700;box-shadow:inset 0 3px var(--ac)}
+h2,h3{margin:0}
+h3{font-size:1rem}
+.bar{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
+.bar h2,.bar h3{flex:1}
+.card{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.card span{color:var(--mut);font-size:.88rem}
+details.card summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+details.card summary b{flex:1}
+details.card[open] summary{margin-bottom:10px}
+.tag{font-size:.75rem;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap}
+.s0{background:#667080}.s1{background:#1f4fd8}.s2{background:#8a5a00}.s3{background:#7c3aed}.s4{background:#15803d}
+.page{font-family:"Courier Prime","Courier New",ui-monospace,monospace;background:var(--pg);border:1px solid var(--ln);padding:16px;line-height:1.65;white-space:pre-wrap;font-size:.9rem;overflow-wrap:anywhere;box-shadow:0 1px 0 var(--ln),0 6px 0 -3px var(--ln)}
+.note{white-space:pre-wrap;color:var(--mut);padding:2px 2px 6px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.ev{display:flex;align-items:center;gap:10px;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.ev div{flex:1;display:flex;flex-direction:column}
+.ev span{color:var(--mut);font-size:.85rem}
+.ev.done{opacity:.55}.ev.done b{text-decoration:line-through}
+.ev input{width:22px;height:22px;padding:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--mut);margin-top:10px}
+label>*{color:var(--ink)}
+.empty,.foot{color:var(--mut)}
+.btn{display:inline-block;border:1px solid var(--ln);background:var(--pn);border-radius:8px;padding:8px 12px;cursor:pointer;margin:0;color:var(--ink);flex-direction:row}
+dialog{border:1px solid var(--ln);border-radius:12px;background:var(--pn);color:var(--ink);width:min(460px,92vw);padding:16px}
+dialog textarea,dialog input,dialog select{width:100%}
+dialog p.r{text-align:right;margin:14px 0 0}
+#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><strong>Estúdio</strong><span>para videomakers</span><button id="cfg" type="button">Ajustes de IA</button></header>
+<main id="v"></main>
+<nav>
+  <button data-t="clientes">Clientes</button>
+  <button data-t="gerador">Roteiros</button>
+  <button data-t="lib">Biblioteca</button>
+  <button data-t="agenda">Agenda</button>
+</nav>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s), LS="estudio-v1";
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const L=a=>a.map(x=>[x,x]);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fd=d=>d?d.split("-").reverse().join("/"):"";
+const ST=["Ideia","Roteiro","Gravado","Editado","Entregue"], TONS=["Profissional","Descontraído","Emocional","Inspirador","Bem-humorado"];
+const LIB=[
+{n:"Reels / TikTok",d:"15 a 45 s, vertical 9:16",e:["Gancho nos 3 primeiros segundos","Problema ou promessa","Demonstração rápida","Prova ou virada","Chamada para ação"],g:["Ninguém te conta isso sobre ___","3 erros que deixam ___ com cara de amador","Fiz ___ em 24 horas, olha o resultado"],c:["Gravar em 9:16","Legenda na tela para quem assiste sem som","Plano de abertura forte e já em movimento"]},
+{n:"Vídeo institucional",d:"60 a 120 s",e:["Abertura com a imagem mais marcante da empresa","Quem somos e o que fazemos","Bastidores e pessoas","Diferenciais com prova (números, clientes)","Encerramento com marca e contato"],g:["Tudo começou com uma ideia: ___","Por trás de ___ existem pessoas que ___"],c:["Autorização de uso de imagem","Planos de apoio (cutaways) dos ambientes","Entrevista com áudio limpo (lapela)"]},
+{n:"Casamento / evento",d:"teaser de 60 s ou filme de 3 a 8 min",e:["Preparativos e detalhes","Chegada e cerimônia","Votos e emoções","Festa e momentos espontâneos","Encerramento com o plano mais simbólico"],g:["O dia em que ___ disse sim","Os detalhes que só quem viveu esse dia entende"],c:["Alinhar o roteiro do dia com o cerimonial","Baterias e cartões extras","Captar o áudio dos votos"]},
+{n:"Clipe musical",d:"3 a 4 min",e:["Conceito visual ligado à letra","Plano de abertura que define o clima","Cenas de performance","Cenas narrativas ou simbólicas","Clímax no refrão final"],g:["Uma única locação, três atmosferas","A história contada de trás para frente"],c:["Playback e referência de BPM","Storyboard aprovado","Lista de figurino e arte"]},
+{n:"Mini documentário",d:"5 a 15 min",e:["Pergunta central","Apresentação do personagem","Conflito ou obstáculo","Transformação","Reflexão final"],g:["Quem é ___ quando ninguém está olhando?","O que acontece quando ___ decide ___"],c:["Roteiro de perguntas da entrevista","Imagens de cobertura (B-roll)","Termo de cessão de imagem"]},
+{n:"Depoimento / entrevista",d:"1 a 3 min",e:["Apresentação (nome e função)","Situação antes","O que mudou","Resultado concreto","Recomendação"],g:["Antes de ___, eu achava que ___","O que mais me surpreendeu em ___ foi ___"],c:["Duas câmeras ou dois ângulos","Fundo e luz definidos","Perguntas enviadas com antecedência"]}];
+const PROV={groq:["https://api.groq.com/openai/v1/chat/completions","llama-3.3-70b-versatile"],gemini:["https://generativelanguage.googleapis.com/v1beta/openai/chat/completions","gemini-2.0-flash"],openrouter:["https://openrouter.ai/api/v1/chat/completions","meta-llama/llama-3.3-70b-instruct:free"]};
+
+let S={clients:[],items:[],events:[],cfg:{prov:"groq",key:"",mod:""}};
+try{Object.assign(S,JSON.parse(localStorage.getItem(LS)||"{}"))}catch{}
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch{toast("Não foi possível salvar neste navegador")}};
+let V={tab:"clientes",cid:null,g:{f:LIB[0].n,t:TONS[0],d:"",s:"",c:"",out:""}};
+const cn=id=>(S.clients.find(c=>c.id===id)||{}).name||"Sem cliente";
+const byDate=(a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""));
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),2200)}
+function dl(n,t,m){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
+
+function form(title,fields,vals,cb,note){
+ const d=$("#dlg");
+ d.innerHTML='<form method="dialog"><strong>'+title+'</strong>'+fields.map(f=>{
+  const v=vals[f.k]==null?"":vals[f.k];let i;
+  if(f.t==="textarea")i='<textarea name="'+f.k+'" rows="6">'+esc(v)+'</textarea>';
+  else if(f.t==="select")i='<select name="'+f.k+'">'+f.o.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]==v?" selected":"")+'>'+esc(o[1])+'</option>').join("")+'</select>';
+  else i='<input name="'+f.k+'" type="'+(f.t||"text")+'" value="'+esc(v)+'">';
+  return '<label>'+f.l+i+'</label>'}).join("")+(note?'<small class="empty">'+note+'</small>':"")+'<p class="r"><button value="x">Cancelar</button> <button class="p" value="ok">Salvar</button></p></form>';
+ d.returnValue="";
+ d.onclose=()=>{if(d.returnValue==="ok"){const o={};new FormData(d.querySelector("form")).forEach((v,k)=>o[k]=v);cb(o)}};
+ d.showModal();
+}
+const CF=[{k:"name",l:"Nome do cliente"},{k:"brief",l:"Briefing (objetivo, público, tom de voz)",t:"textarea"}];
+const IF=[{k:"title",l:"Título"},{k:"tipo",l:"Tipo",t:"select",o:L(["Ideia","Roteiro","Tarefa"])},{k:"status",l:"Status",t:"select",o:L(ST)},{k:"body",l:"Conteúdo ou roteiro",t:"textarea"}];
+const EF=()=>[{k:"title",l:"Título"},{k:"tipo",l:"Tipo",t:"select",o:L(["Gravação","Edição","Entrega","Reunião"])},{k:"cid",l:"Cliente",t:"select",o:S.clients.map(c=>[c.id,c.name])},{k:"date",l:"Data",t:"date"},{k:"time",l:"Hora",t:"time"}];
+
+function itemCard(i){return '<details class="card"><summary><b>'+esc(i.title)+'</b><span class="tag s'+ST.indexOf(i.status)+'">'+esc(i.status)+'</span></summary><div class="page">'+(esc(i.body)||"(vazio)")+'</div><p class="acts"><button data-a="edi" data-id="'+i.id+'">Editar</button><button data-a="cpi" data-id="'+i.id+'">Copiar</button><button data-a="deli" data-id="'+i.id+'">Excluir</button></p></details>'}
+function evRow(e,withC){return '<div class="ev'+(e.done?" done":"")+'"><input type="checkbox" data-a="tg" data-id="'+e.id+'"'+(e.done?" checked":"")+' aria-label="Concluído"><div><b>'+esc(e.title)+'</b><span>'+esc(e.tipo)+', '+fd(e.date)+(e.time?' às '+e.time:"")+(withC?', '+esc(cn(e.cid)):"")+'</span></div><button data-a="ede" data-id="'+e.id+'">Editar</button></div>'}
+
+function vClientes(){
+ if(V.cid)return vCliente();
+ return '<div class="bar"><h2>Clientes</h2><button class="p" data-a="newc">Novo cliente</button></div>'+
+ (S.clients.length?S.clients.map(c=>{const n=S.items.filter(i=>i.cid===c.id).length,e=S.events.filter(x=>x.cid===c.id&&!x.done&&x.date>=today()).length;
+  return '<button class="card" data-a="openc" data-id="'+c.id+'"><b>'+esc(c.name)+'</b><span>'+n+' conteúdos, '+e+' agendamentos próximos</span></button>'}).join(""):
+  '<p class="empty">Crie seu primeiro cliente para guardar briefing, roteiros e datas no mesmo lugar.</p>')+
+ '<p class="foot">Seus dados ficam só neste navegador. Faça backup de vez em quando.</p><div class="acts"><button data-a="bk">Exportar backup</button><label class="btn">Importar backup<input type="file" id="imp" accept=".json" hidden></label></div>';
+}
+function vCliente(){
+ const c=S.clients.find(x=>x.id===V.cid);if(!c){V.cid=null;return vClientes()}
+ const its=S.items.filter(i=>i.cid===c.id),evs=S.events.filter(e=>e.cid===c.id).sort(byDate);
+ return '<div class="bar"><button data-a="back">Voltar</button><h2>'+esc(c.name)+'</h2><button data-a="editc" data-id="'+c.id+'">Editar</button></div>'+
+ '<div class="note">'+(esc(c.brief)||"Sem briefing ainda. Toque em Editar para registrar objetivo, público e tom de voz.")+'</div>'+
+ '<div class="bar"><h3>Conteúdos</h3><button class="p" data-a="newi" data-id="'+c.id+'">Novo conteúdo</button></div>'+(its.map(itemCard).join("")||'<p class="empty">Nenhum conteúdo ainda. Gere um roteiro na aba Roteiros e salve aqui.</p>')+
+ '<div class="bar"><h3>Agenda</h3><button class="p" data-a="newe" data-id="'+c.id+'">Novo agendamento</button></div>'+(evs.map(e=>evRow(e,false)).join("")||'<p class="empty">Nenhum agendamento.</p>')+
+ '<div class="acts"><button data-a="delc" data-id="'+c.id+'">Excluir cliente</button></div>';
+}
+function vGerador(){
+ const g=V.g;
+ return '<div class="bar"><h2>Gerador de roteiros</h2></div><div class="grid">'+
+ '<label>Cliente<select id="g_c"><option value="">Nenhum</option>'+S.clients.map(c=>'<option value="'+c.id+'"'+(g.c===c.id?" selected":"")+'>'+esc(c.name)+'</option>').join("")+'</select></label>'+
+ '<label>Formato<select id="g_f">'+LIB.map(f=>'<option'+(g.f===f.n?" selected":"")+'>'+f.n+'</option>').join("")+'</select></label>'+
+ '<label>Duração<input id="g_d" value="'+esc(g.d)+'" placeholder="ex.: 30 s"></label>'+
+ '<label>Tom<select id="g_t">'+TONS.map(t=>'<option'+(g.t===t?" selected":"")+'>'+t+'</option>').join("")+'</select></label></div>'+
+ '<label>Tema ou assunto<textarea id="g_s" rows="3" placeholder="Ex.: lançamento da coleção de verão de uma loja de roupas">'+esc(g.s)+'</textarea></label>'+
+ '<div class="acts"><button data-a="goff">Gerar modelo (offline)</button><button class="p" data-a="gai">Gerar com IA</button></div>'+
+ (g.out?'<div class="bar"><h3>Resultado</h3></div><div class="page">'+esc(g.out)+'</div><div class="acts"><button data-a="gcp">Copiar</button><button data-a="gsv">Salvar no cliente</button></div>':"");
+}
+function vLib(){
+ return '<div class="bar"><h2>Biblioteca</h2></div>'+LIB.map((f,i)=>'<details class="card"><summary><b>'+f.n+'</b><span>'+f.d+'</span></summary><div class="page">ESTRUTURA\n'+f.e.map((x,j)=>(j+1)+". "+x).join("\n")+'\n\nGANCHOS\n'+f.g.map(x=>"- "+esc(x)).join("\n")+'\n\nCHECKLIST\n'+f.c.map(x=>"[ ] "+x).join("\n")+'</div><p class="acts"><button class="p" data-a="uselib" data-id="'+i+'">Usar no gerador</button></p></details>').join("");
+}
+function vAgenda(){
+ const t=today(),all=S.events.slice().sort(byDate),up=all.filter(e=>e.date>=t&&!e.done),past=all.filter(e=>!(e.date>=t&&!e.done)).reverse();
+ return '<div class="bar"><h2>Agenda</h2><button class="p" data-a="newe">Novo agendamento</button></div>'+
+ (up.map(e=>evRow(e,true)).join("")||'<p class="empty">Nada agendado. Adicione gravações, entregas e reuniões.</p>')+
+ (all.length?'<div class="acts"><button data-a="ics">Exportar para o calendário (.ics)</button></div>':"")+
+ (past.length?'<div class="bar"><h3>Concluídos e passados</h3></div>'+past.map(e=>evRow(e,true)).join(""):"");
+}
+function render(){
+ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===V.tab));
+ $("#v").innerHTML={clientes:vClientes,gerador:vGerador,lib:vLib,agenda:vAgenda}[V.tab]();
+}
+
+function readG(){const g=V.g,q=id=>$(id)?$(id).value:"";if(!$("#g_f"))return g;Object.assign(g,{c:q("#g_c"),f:q("#g_f"),d:q("#g_d"),t:q("#g_t"),s:q("#g_s")});return g}
+function offline(g){const f=LIB.find(x=>x.n===g.f),t=g.s.trim()||"seu tema";
+ return "TÍTULO: "+t+"\nFORMATO: "+f.n+" ("+(g.d||f.d)+")\nTOM: "+g.t+(g.c?"\nCLIENTE: "+cn(g.c):"")+"\n\nGANCHOS POSSÍVEIS\n"+f.g.map(x=>"- "+x.replace("___",t)).join("\n")+"\n\nROTEIRO (IMAGEM | ÁUDIO)\n"+f.e.map((s,i)=>(i+1)+". "+s+"\n   IMAGEM: \n   ÁUDIO: ").join("\n")+"\n\nCHECKLIST DE GRAVAÇÃO\n"+f.c.map(x=>"[ ] "+x).join("\n")}
+async function ai(p){
+ const P=PROV[S.cfg.prov];if(!S.cfg.key)throw new Error("Cole sua chave de API em Ajustes de IA (Groq, Gemini e OpenRouter têm plano gratuito).");
+ const r=await fetch(P[0],{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+S.cfg.key},body:JSON.stringify({model:S.cfg.mod||P[1],messages:[{role:"system",content:"Você é roteirista e produtor audiovisual experiente. Responda em português do Brasil, em texto simples, sem Markdown."},{role:"user",content:p}]})});
+ if(!r.ok)throw new Error("Erro "+r.status+": "+(await r.text()).slice(0,150));
+ return (await r.json()).choices[0].message.content;
+}
+function ics(){
+ const L2=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Estudio//PT"],st=new Date().toISOString().replace(/[-:]|\.\d+/g,"");
+ S.events.forEach(e=>L2.push("BEGIN:VEVENT","UID:"+e.id+"@estudio","DTSTAMP:"+st,"DTSTART:"+e.date.replace(/-/g,"")+"T"+(e.time||"09:00").replace(":","")+"00","DURATION:PT2H","SUMMARY:"+e.tipo+": "+e.title+" ("+cn(e.cid)+")","END:VEVENT"));
+ L2.push("END:VCALENDAR");dl("agenda.ics",L2.join("\r\n"),"text/calendar");
+}
+const find=(k,id)=>S[k].find(x=>x.id===id);
+const A={
+ back(){V.cid=null;render()},
+ openc(id){V.cid=id;render()},
+ newc(){form("Novo cliente",CF,{},o=>{if(!o.name.trim())return toast("Informe o nome");const c={id:uid(),name:o.name.trim(),brief:o.brief};S.clients.push(c);V.cid=c.id;save();render()})},
+ editc(id){const c=find("clients",id);form("Editar cliente",CF,c,o=>{if(o.name.trim())Object.assign(c,{name:o.name.trim(),brief:o.brief});save();render()})},
+ delc(id){if(!confirm("Excluir o cliente e tudo que está dentro dele?"))return;S.clients=S.clients.filter(c=>c.id!==id);S.items=S.items.filter(i=>i.cid!==id);S.events=S.events.filter(e=>e.cid!==id);V.cid=null;save();render()},
+ newi(cid){form("Novo conteúdo",IF,{tipo:"Ideia",status:"Ideia"},o=>{if(!o.title.trim())return toast("Informe o título");S.items.unshift({id:uid(),cid,...o});save();render()})},
+ edi(id){const i=find("items",id);form("Editar conteúdo",IF,i,o=>{Object.assign(i,o);save();render()})},
+ cpi(id){navigator.clipboard.writeText(find("items",id).body).then(()=>toast("Copiado"))},
+ deli(id){if(confirm("Excluir este conteúdo?")){S.items=S.items.filter(i=>i.id!==id);save();render()}},
+ newe(cid){if(!S.clients.length)return toast("Crie um cliente primeiro");form("Novo agendamento",EF(),{tipo:"Gravação",cid:cid||S.clients[0].id,date:today()},o=>{if(!o.title.trim()||!o.date)return toast("Informe título e data");S.events.push({id:uid(),done:false,...o});save();render()})},
+ ede(id){const e=find("events",id);form("Editar agendamento",EF(),e,o=>{Object.assign(e,o);save();render()})},
+ tg(id){const e=find("events",id);e.done=!e.done;save();render()},
+ ics,
+ uselib(i){V.g.f=LIB[i].n;V.tab="gerador";render();scrollTo(0,0)},
+ goff(){const g=readG();g.out=offline(g);render()},
+ async gai(){const g=readG(),c=S.clients.find(x=>x.id===g.c),f=LIB.find(x=>x.n===g.f);
+  g.out="Gerando com IA…";render();
+  try{g.out=await ai("Crie 5 ideias de vídeo e depois UM roteiro completo em duas colunas (IMAGEM e ÁUDIO), com lista de planos (shot list) e checklist de gravação.\nFormato: "+f.n+"\nDuração: "+(g.d||f.d)+"\nTom: "+g.t+"\nTema: "+(g.s||"livre, sugira ideias")+(c?"\nCliente: "+c.name+"\nBriefing do cliente: "+c.brief:""))}
+  catch(e){g.out="Erro: "+e.message}
+  render()},
+ gcp(){navigator.clipboard.writeText(V.g.out).then(()=>toast("Copiado"))},
+ gsv(){const g=readG();if(!g.c)return toast("Escolha um cliente acima");S.items.unshift({id:uid(),cid:g.c,tipo:"Roteiro",title:(g.s.trim()||g.f).slice(0,50),status:"Roteiro",body:g.out});save();toast("Salvo em "+cn(g.c))},
+ bk(){dl("backup-estudio.json",JSON.stringify({...S,cfg:{...S.cfg,key:""}}),"application/json")}
+};
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-a],[data-t]");if(!b)return;
+ if(b.dataset.t){readG();V.tab=b.dataset.t;V.cid=null;render();scrollTo(0,0);return}
+ A[b.dataset.a](b.dataset.id,b);
+});
+document.addEventListener("change",async e=>{
+ if(e.target.id!=="imp")return;
+ try{const d=JSON.parse(await e.target.files[0].text());if(!confirm("Substituir todos os dados atuais pelo backup?"))return;
+  S.clients=d.clients||[];S.items=d.items||[];S.events=d.events||[];save();render();toast("Backup importado")}
+ catch{toast("Arquivo de backup inválido")}
+});
+$("#cfg").onclick=()=>form("Ajustes de IA",[{k:"prov",l:"Serviço",t:"select",o:[["groq","Groq"],["gemini","Google Gemini"],["openrouter","OpenRouter"]]},{k:"key",l:"Chave de API",t:"password"},{k:"mod",l:"Modelo (opcional)"}],S.cfg,o=>{Object.assign(S.cfg,{prov:o.prov,key:o.key.trim(),mod:o.mod.trim()});save();toast("Ajustes salvos")},"A chave fica só neste navegador. O gerador offline funciona sem chave.");
+render();
+</script>
+</body>
+</html>
